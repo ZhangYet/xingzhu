@@ -23,6 +23,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -32,6 +34,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,6 +47,7 @@ import com.xingzhun.ui.theme.InkSecondary
 import com.xingzhun.ui.theme.Paper
 import com.xingzhun.ui.theme.RhymeRed
 import com.xingzhun.ui.theme.SealBrown
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,9 +56,15 @@ fun AddScreen(
     viewModel: AddViewModel = hiltViewModel(),
 ) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val showMessage: (String) -> Unit = { msg ->
+        scope.launch { snackbarHostState.showSnackbar(msg) }
+    }
 
     Scaffold(
         containerColor = Paper,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("添加诗词", style = MaterialTheme.typography.titleLarge) },
@@ -80,8 +91,8 @@ fun AddScreen(
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("手动输入") })
             }
             when (tab) {
-                0 -> SearchTab(viewModel)
-                else -> ManualTab(viewModel)
+                0 -> SearchTab(viewModel, showMessage)
+                else -> ManualTab(viewModel, showMessage)
             }
         }
     }
@@ -90,7 +101,7 @@ fun AddScreen(
 // ── 搜索语料 ───────────────────────────────────────────
 
 @Composable
-private fun SearchTab(viewModel: AddViewModel) {
+private fun SearchTab(viewModel: AddViewModel, showMessage: (String) -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
     val results by viewModel.results.collectAsState()
 
@@ -121,7 +132,13 @@ private fun SearchTab(viewModel: AddViewModel) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(results, key = { it.seed.title + it.seed.author }) { item ->
-                SearchResultCard(item = item, onAdd = { viewModel.add(item.seed) })
+                SearchResultCard(
+                    item = item,
+                    onAdd = {
+                        viewModel.add(item.seed)
+                        showMessage("已加入书架《${item.seed.title}》")
+                    },
+                )
             }
         }
     }
@@ -168,12 +185,11 @@ private fun SearchResultCard(item: PoemSearchItem, onAdd: () -> Unit) {
 // ── 手动输入 ───────────────────────────────────────────
 
 @Composable
-private fun ManualTab(viewModel: AddViewModel) {
+private fun ManualTab(viewModel: AddViewModel, showMessage: (String) -> Unit) {
     var title by rememberSaveable { mutableStateOf("") }
     var author by rememberSaveable { mutableStateOf("") }
     var dynasty by rememberSaveable { mutableStateOf("") }
     var content by rememberSaveable { mutableStateOf("") }
-    var added by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -188,7 +204,7 @@ private fun ManualTab(viewModel: AddViewModel) {
         )
         OutlinedTextField(
             value = title,
-            onValueChange = { title = it; added = false },
+            onValueChange = { title = it },
             modifier = Modifier.fillMaxWidth(),
             label = { Text("题目") },
             singleLine = true,
@@ -211,7 +227,7 @@ private fun ManualTab(viewModel: AddViewModel) {
         }
         OutlinedTextField(
             value = content,
-            onValueChange = { content = it; added = false },
+            onValueChange = { content = it },
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
@@ -219,7 +235,15 @@ private fun ManualTab(viewModel: AddViewModel) {
         )
         Button(
             onClick = {
-                if (viewModel.addManual(title, author, dynasty, "诗", content)) added = true
+                if (viewModel.addManual(title, author, dynasty, "诗", content)) {
+                    showMessage("已加入书架《$title》")
+                    title = ""
+                    author = ""
+                    dynasty = ""
+                    content = ""
+                } else {
+                    showMessage("请填写题目与诗词原文")
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = title.isNotBlank() && content.isNotBlank(),
@@ -229,9 +253,6 @@ private fun ManualTab(viewModel: AddViewModel) {
             ),
         ) {
             Text("加入书架")
-        }
-        if (added) {
-            Text("已加入书架", style = MaterialTheme.typography.labelMedium, color = RhymeRed)
         }
     }
 }

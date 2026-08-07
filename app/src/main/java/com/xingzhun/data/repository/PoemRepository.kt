@@ -42,8 +42,9 @@ class PoemRepository @Inject constructor(
     suspend fun addManual(title: String, author: String, dynasty: String, form: String, content: String): Long =
         addToLibrary(PoemSeed(title = title, author = author, dynasty = dynasty, form = form, content = content))
 
-    /** 加入书架，并同步生成平仄/韵脚标注缓存 */
+    /** 加入书架（同题目+作者已存在则不重复插入），并同步生成平仄/韵脚标注缓存 */
     suspend fun addToLibrary(seed: PoemSeed): Long {
+        poemDao.findByTitleAuthor(seed.title, seed.author)?.let { return it.id }
         val id = poemDao.insert(
             PoemEntity(
                 title = seed.title,

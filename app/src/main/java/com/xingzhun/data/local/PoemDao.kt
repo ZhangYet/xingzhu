@@ -18,6 +18,9 @@ interface PoemDao {
     @Query("SELECT * FROM poem WHERE id = :id")
     fun observeById(id: Long): Flow<PoemEntity?>
 
+    @Query("SELECT * FROM poem WHERE title = :title AND author = :author LIMIT 1")
+    suspend fun findByTitleAuthor(title: String, author: String): PoemEntity?
+
     @Query("SELECT * FROM poem WHERE title LIKE '%' || :query || '%' OR author LIKE '%' || :query || '%' ORDER BY addedAt DESC")
     fun search(query: String): Flow<List<PoemEntity>>
 
