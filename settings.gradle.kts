@@ -20,6 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "xingzhun"
+rootProject.name = "xingzhu"
 include(":app")
 include(":engine")
