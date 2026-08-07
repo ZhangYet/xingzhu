@@ -12,6 +12,9 @@ interface PoemDao {
     @Query("SELECT * FROM poem ORDER BY addedAt DESC")
     fun observeAll(): Flow<List<PoemEntity>>
 
+    @Query("SELECT COUNT(*) FROM poem")
+    suspend fun count(): Long
+
     @Query("SELECT * FROM poem WHERE id = :id")
     fun observeById(id: Long): Flow<PoemEntity?>
 

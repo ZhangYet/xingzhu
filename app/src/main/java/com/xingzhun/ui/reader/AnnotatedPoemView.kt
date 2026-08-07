@@ -1,5 +1,6 @@
 package com.xingzhun.ui.reader
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -18,6 +20,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xingzhun.engine.AnnotatedLine
@@ -25,8 +29,12 @@ import com.xingzhun.engine.AnnotatedPoem
 import com.xingzhun.engine.CharMeta
 import com.xingzhun.engine.ToneClass
 import com.xingzhun.ui.theme.Ink
+import com.xingzhun.ui.theme.InkSecondary
 import com.xingzhun.ui.theme.RhymeRed
-import com.xingzhun.ui.theme.ToneMark
+import com.xingzhun.ui.theme.RhymeRedBg
+import com.xingzhun.ui.theme.ToneLevel
+import com.xingzhun.ui.theme.ToneLevelBg
+import com.xingzhun.ui.theme.ToneUnknownBg
 import kotlinx.coroutines.delay
 
 enum class ReaderLayout { HORIZONTAL, VERTICAL }
@@ -91,14 +99,9 @@ private fun HorizontalLine(
         line.chars.forEach { meta ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (showTone && meta.char !in PUNCT) {
-                    Text(
-                        text = toneMark(meta, markStyle),
-                        fontSize = (fontSize * 0.45f).sp,
-                        color = ToneMark,
-                        lineHeight = (fontSize * 0.62f).sp,
-                    )
+                    ToneMarkBadge(meta, markStyle, fontSize)
                 } else {
-                    Spacer(Modifier.height((fontSize * 0.62f).dp))
+                    Spacer(Modifier.height(badgeSize(fontSize).dp))
                 }
                 AnnotatedChar(meta, fontSize, showRhyme)
             }
@@ -110,7 +113,7 @@ private fun HorizontalLine(
                 color = RhymeRed,
                 modifier = Modifier
                     .padding(start = 8.dp)
-                    .padding(top = (fontSize * 0.62f).dp),
+                    .padding(top = badgeSize(fontSize).dp),
             )
         }
     }
@@ -138,13 +141,9 @@ private fun VerticalLine(
             line.chars.forEach { meta ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (showTone && meta.char !in PUNCT) {
-                        Text(
-                            text = toneMark(meta, markStyle),
-                            fontSize = (fontSize * 0.45f).sp,
-                            color = ToneMark,
-                        )
+                        ToneMarkBadge(meta, markStyle, fontSize)
                     } else {
-                        Spacer(Modifier.width((fontSize * 0.45f).dp))
+                        Spacer(Modifier.width(badgeSize(fontSize).dp))
                     }
                     if (showRhyme && meta.isRhymeWord && meta.rhyme != null) {
                         Text(
@@ -177,8 +176,36 @@ private fun AnnotatedChar(meta: CharMeta, fontSize: Float, showRhyme: Boolean) {
     }
 }
 
-private fun toneMark(meta: CharMeta, style: MarkStyle): String = when (meta.tone) {
-    ToneClass.LEVEL -> if (style == MarkStyle.SYMBOL) "〇" else "平"
-    ToneClass.OBLIQUE -> if (style == MarkStyle.SYMBOL) "●" else "仄"
-    ToneClass.UNKNOWN -> "？"
+private fun badgeSize(fontSize: Float): Float = fontSize * 0.78f
+
+/** 醒目的平仄标记：彩色圆底 + 标记字符（平=石青〇，仄=朱砂●） */
+@Composable
+private fun ToneMarkBadge(meta: CharMeta, style: MarkStyle, fontSize: Float) {
+    val (fg, bg, text) = when (meta.tone) {
+        ToneClass.LEVEL -> Triple(
+            ToneLevel,
+            ToneLevelBg,
+            if (style == MarkStyle.SYMBOL) "〇" else "平",
+        )
+        ToneClass.OBLIQUE -> Triple(
+            RhymeRed,
+            RhymeRedBg,
+            if (style == MarkStyle.SYMBOL) "●" else "仄",
+        )
+        ToneClass.UNKNOWN -> Triple(InkSecondary, ToneUnknownBg, "？")
+    }
+    Box(
+        modifier = Modifier
+            .size(badgeSize(fontSize).dp)
+            .clip(CircleShape)
+            .background(bg),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            color = fg,
+            fontSize = (fontSize * 0.52f).sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
 }
