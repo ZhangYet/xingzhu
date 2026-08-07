@@ -6,6 +6,8 @@ captures/
 
 # Android
 local.properties
+signing.properties
+app/keystore/
 *.apk
 *.aab
 *.keystore
