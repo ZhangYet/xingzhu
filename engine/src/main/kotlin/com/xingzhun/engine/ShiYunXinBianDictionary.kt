@@ -89,6 +89,7 @@ class ShiYunXinBianDictionary private constructor(
             '调' to "tiáo",
             '胜' to "shèng",
             '处' to "chù",
+            '地' to "dì",   // 诗作中"地上/天地"读 dì（去声），kXHC 首选是助词轻声 de
         )
 
         private val INITIALS = listOf("zh", "ch", "sh") +
