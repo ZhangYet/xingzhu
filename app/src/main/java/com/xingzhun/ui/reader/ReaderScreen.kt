@@ -97,64 +97,96 @@ fun ReaderScreen(
                 Text("未找到该诗词", color = InkSecondary, style = MaterialTheme.typography.bodyLarge)
             }
         } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp),
-            ) {
+            val annotated = readerPoem.annotated
+
+            val header: @Composable () -> Unit = {
                 Text(
                     poem.title,
                     style = MaterialTheme.typography.headlineMedium,
                     color = Ink,
-                    modifier = Modifier.padding(top = 24.dp),
+                    modifier = Modifier.padding(top = 20.dp),
                 )
                 Text(
                     text = listOfNotNull(poem.dynasty, poem.author, poem.form).joinToString(" · "),
                     style = MaterialTheme.typography.bodyMedium,
                     color = InkSecondary,
                 )
-                val annotated = readerPoem.annotated
-                if (annotated != null) {
-                    AnnotatedPoemBody(
+            }
+
+            val notes: @Composable () -> Unit = {
+                val poemNotes = annotated?.annotations.orEmpty()
+                if (poemNotes.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier.padding(top = 16.dp, bottom = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text("标注说明", style = MaterialTheme.typography.titleMedium, color = RhymeRed)
+                        poemNotes.forEach { note ->
+                            Text(note, style = MaterialTheme.typography.bodyMedium, color = InkSecondary)
+                        }
+                    }
+                }
+            }
+
+            if (annotated != null && layout == ReaderLayout.VERTICAL) {
+                // 竖排：分页翻页，pager 撑满可用高度
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(horizontal = 24.dp),
+                ) {
+                    header()
+                    VerticalPager(
                         annotated = annotated,
-                        layout = layout,
                         showTone = showTone,
                         showRhyme = showRhyme,
                         markStyle = markStyle,
                         fontSize = fontSize,
-                        modifier = Modifier.padding(top = 24.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(top = 12.dp),
                     )
-                } else {
-                    // 标注缺失时的兜底：纯文本
-                    Column(
-                        modifier = Modifier.padding(top = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        TextSplitter.splitSentences(poem.contentText).forEach { line ->
-                            Text(
-                                text = line,
-                                fontSize = fontSize.sp,
-                                lineHeight = (fontSize * 1.8f).sp,
-                                letterSpacing = 4.sp,
-                                color = Ink,
-                                fontWeight = FontWeight.Medium,
-                            )
-                        }
-                    }
+                    notes()
                 }
-                val notes = readerPoem.annotated?.annotations.orEmpty()
-                if (notes.isNotEmpty()) {
-                    Column(
-                        modifier = Modifier.padding(top = 28.dp, bottom = 32.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Text("标注说明", style = MaterialTheme.typography.titleMedium, color = RhymeRed)
-                        notes.forEach { note ->
-                            Text(note, style = MaterialTheme.typography.bodyMedium, color = InkSecondary)
+            } else {
+                // 横排 / 标注缺失兜底：纵向滚动
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp),
+                ) {
+                    header()
+                    if (annotated != null) {
+                        AnnotatedPoemBody(
+                            annotated = annotated,
+                            showTone = showTone,
+                            showRhyme = showRhyme,
+                            markStyle = markStyle,
+                            fontSize = fontSize,
+                            modifier = Modifier.padding(top = 24.dp),
+                        )
+                    } else {
+                        // 标注缺失时的兜底：纯文本
+                        Column(
+                            modifier = Modifier.padding(top = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            TextSplitter.splitSentences(poem.contentText).forEach { line ->
+                                Text(
+                                    text = line,
+                                    fontSize = fontSize.sp,
+                                    lineHeight = (fontSize * 1.8f).sp,
+                                    letterSpacing = 4.sp,
+                                    color = Ink,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
                         }
                     }
+                    notes()
                 }
             }
         }
