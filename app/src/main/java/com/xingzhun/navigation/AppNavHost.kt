@@ -37,8 +37,9 @@ fun AppNavHost() {
         composable(
             route = Routes.READER,
             arguments = listOf(navArgument("poemId") { type = NavType.LongType }),
-        ) {
-            ReaderScreen(onBack = { navController.popBackStack() })
+        ) { backStackEntry ->
+            val poemId = backStackEntry.arguments?.getLong("poemId") ?: 0L
+            ReaderScreen(poemId = poemId, onBack = { navController.popBackStack() })
         }
     }
 }

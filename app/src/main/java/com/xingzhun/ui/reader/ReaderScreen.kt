@@ -27,6 +27,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -35,6 +36,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.xingzhun.data.local.PoemEntity
 import com.xingzhun.engine.TextSplitter
 import com.xingzhun.ui.theme.Ink
 import com.xingzhun.ui.theme.InkSecondary
@@ -43,14 +46,16 @@ import com.xingzhun.ui.theme.SealBrown
 
 private enum class LayoutMode { HORIZONTAL, VERTICAL }
 
-// M0 示例文本，M2 起从 Room 按 poemId 加载
-private val samplePoem = "床前明月光，疑是地上霜。举头望明月，低头思故乡。"
-private val sampleTitle = "静夜思"
-private val sampleAuthor = "李白 · 唐"
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReaderScreen(onBack: () -> Unit) {
+fun ReaderScreen(
+    poemId: Long,
+    onBack: () -> Unit,
+    viewModel: ReaderViewModel = hiltViewModel(),
+) {
+    val poem by produceState<PoemEntity?>(initialValue = null, key1 = poemId) {
+        viewModel.observePoem(poemId).collect { value = it }
+    }
     var layout by rememberSaveable { mutableStateOf(LayoutMode.HORIZONTAL) }
     var showSettings by remember { mutableStateOf(false) }
     var showTone by rememberSaveable { mutableStateOf(true) }
@@ -61,7 +66,7 @@ fun ReaderScreen(onBack: () -> Unit) {
         containerColor = Paper,
         topBar = {
             TopAppBar(
-                title = { Text(sampleTitle, style = MaterialTheme.typography.titleLarge) },
+                title = { Text(poem?.title ?: "", style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
@@ -83,18 +88,22 @@ fun ReaderScreen(onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        PoemBody(
-            title = sampleTitle,
-            subtitle = sampleAuthor,
-            text = samplePoem,
-            layout = layout,
-            showTone = showTone,
-            showRhyme = showRhyme,
-            fontSize = fontSize,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-        )
+        if (poem == null) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("未找到该诗词", color = InkSecondary, style = MaterialTheme.typography.bodyLarge)
+            }
+        } else {
+            PoemBody(
+                poem = poem!!,
+                layout = layout,
+                showTone = showTone,
+                showRhyme = showRhyme,
+                fontSize = fontSize,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            )
+        }
     }
 
     if (showSettings) {
@@ -113,9 +122,7 @@ fun ReaderScreen(onBack: () -> Unit) {
 
 @Composable
 private fun PoemBody(
-    title: String,
-    subtitle: String,
-    text: String,
+    poem: PoemEntity,
     layout: LayoutMode,
     showTone: Boolean,
     showRhyme: Boolean,
@@ -124,14 +131,18 @@ private fun PoemBody(
 ) {
     Column(modifier = modifier.padding(horizontal = 24.dp)) {
         Text(
-            title,
+            poem.title,
             style = MaterialTheme.typography.headlineMedium,
             color = Ink,
             modifier = Modifier.padding(top = 24.dp),
         )
-        Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = InkSecondary)
+        Text(
+            text = listOfNotNull(poem.dynasty, poem.author, poem.form).joinToString(" · "),
+            style = MaterialTheme.typography.bodyMedium,
+            color = InkSecondary,
+        )
         Box(Modifier.padding(top = 24.dp)) {
-            val lines = TextSplitter.splitSentences(text)
+            val lines = TextSplitter.splitSentences(poem.contentText)
             if (layout == LayoutMode.HORIZONTAL) {
                 HorizontalPoem(lines, fontSize)
             } else {

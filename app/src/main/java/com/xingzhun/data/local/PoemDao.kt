@@ -12,11 +12,17 @@ interface PoemDao {
     @Query("SELECT * FROM poem ORDER BY addedAt DESC")
     fun observeAll(): Flow<List<PoemEntity>>
 
+    @Query("SELECT * FROM poem WHERE id = :id")
+    fun observeById(id: Long): Flow<PoemEntity?>
+
     @Query("SELECT * FROM poem WHERE title LIKE '%' || :query || '%' OR author LIKE '%' || :query || '%' ORDER BY addedAt DESC")
     fun search(query: String): Flow<List<PoemEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(poem: PoemEntity): Long
+
+    @Query("UPDATE poem SET annotationJson = :json WHERE id = :id")
+    suspend fun updateAnnotation(id: Long, json: String?)
 
     @Query("DELETE FROM poem WHERE id = :id")
     suspend fun delete(id: Long)
