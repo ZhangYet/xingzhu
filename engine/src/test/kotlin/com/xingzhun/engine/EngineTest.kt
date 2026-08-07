@@ -87,6 +87,27 @@ class ShiYunXinBianDictionaryTest {
         assertEquals("ueng", ShiYunXinBianDictionary.canonicalize("weng"))
         assertEquals("iong", ShiYunXinBianDictionary.canonicalize("yong"))
     }
+
+    @Test
+    fun `canonicalize shorthand finals after initial`() {
+        // iu→iou（十二侯）、ui→uei（八微）、un→uen（十五痕）
+        assertEquals("qiou", ShiYunXinBianDictionary.canonicalize("qiu"))
+        assertEquals("liou", ShiYunXinBianDictionary.canonicalize("liu"))
+        assertEquals("huei", ShiYunXinBianDictionary.canonicalize("hui"))
+        assertEquals("shuei", ShiYunXinBianDictionary.canonicalize("shui"))
+        assertEquals("chuen", ShiYunXinBianDictionary.canonicalize("chun"))
+        assertEquals("xün", ShiYunXinBianDictionary.canonicalize("xun")) // 不误伤 ün
+    }
+
+    @Test
+    fun `shorthand finals map to correct rhyme groups`() {
+        assertEquals("十二侯", entry('秋').rhyme)   // qiū
+        assertEquals("十二侯", entry('流').rhyme)   // liú
+        assertEquals("八微", entry('回').rhyme)     // huí
+        assertEquals("八微", entry('水').rhyme)     // shuǐ
+        assertEquals("十五痕", entry('春').rhyme)   // chūn
+        assertEquals("十五痕", entry('问').rhyme)   // wèn
+    }
 }
 
 class PingZeEngineTest {

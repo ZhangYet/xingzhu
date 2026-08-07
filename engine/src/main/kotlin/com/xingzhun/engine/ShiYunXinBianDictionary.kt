@@ -186,6 +186,10 @@ class ShiYunXinBianDictionary private constructor(
                     "qü" + s.removePrefix("qu")
                 s.startsWith("x") && s.length >= 2 && s[1] == 'u' ->
                     "xü" + s.removePrefix("xu")
+                // 声母后的拼音简写：iu→iou（十二侯）、ui→uei（八微）、un→uen（十五痕）
+                s.endsWith("iu") && s.length > 2 -> s.dropLast(2) + "iou"
+                s.endsWith("ui") && s.length > 2 -> s.dropLast(2) + "uei"
+                s.endsWith("un") && s.length > 2 -> s.dropLast(2) + "uen"
                 else -> s
             }
         }

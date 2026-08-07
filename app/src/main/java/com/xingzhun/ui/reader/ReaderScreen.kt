@@ -1,11 +1,16 @@
 package com.xingzhun.ui.reader
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -115,21 +120,26 @@ fun ReaderScreen(
 
             val notes: @Composable () -> Unit = {
                 val poemNotes = annotated?.annotations.orEmpty()
-                if (poemNotes.isNotEmpty()) {
+                if (showTone || poemNotes.isNotEmpty()) {
                     Column(
                         modifier = Modifier.padding(top = 16.dp, bottom = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        Text("标注说明", style = MaterialTheme.typography.titleMedium, color = RhymeRed)
-                        poemNotes.forEach { note ->
-                            Text(note, style = MaterialTheme.typography.bodyMedium, color = InkSecondary)
+                        if (showTone) {
+                            ToneMarkLegend(markStyle = markStyle, showRhyme = showRhyme)
+                        }
+                        if (poemNotes.isNotEmpty()) {
+                            Text("标注说明", style = MaterialTheme.typography.titleMedium, color = RhymeRed)
+                            poemNotes.forEach { note ->
+                                Text(note, style = MaterialTheme.typography.bodyMedium, color = InkSecondary)
+                            }
                         }
                     }
                 }
             }
 
             if (annotated != null && layout == ReaderLayout.VERTICAL) {
-                // 竖排：分页翻页，pager 撑满可用高度
+                // 竖排：分页翻页，pager 撑满可用高度；标注说明默认收起，不挤占正文
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -147,7 +157,12 @@ fun ReaderScreen(
                             .weight(1f)
                             .padding(top = 12.dp),
                     )
-                    notes()
+                    AnnotationFooter(
+                        showTone = showTone,
+                        showRhyme = showRhyme,
+                        markStyle = markStyle,
+                        notes = annotated.annotations,
+                    )
                 }
             } else {
                 // 横排 / 标注缺失兜底：纵向滚动
@@ -209,6 +224,61 @@ fun ReaderScreen(
 }
 
 @Composable
+private fun AnnotationFooter(
+    showTone: Boolean,
+    showRhyme: Boolean,
+    markStyle: MarkStyle,
+    notes: List<String>,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    if (!showTone && notes.isEmpty()) return
+    Column {
+        if (showTone) {
+            ToneMarkLegend(
+                markStyle = markStyle,
+                showRhyme = showRhyme,
+                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+            )
+        }
+        if (notes.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    "标注说明（${notes.size} 条）",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = RhymeRed,
+                    fontWeight = FontWeight.Medium,
+                )
+                Text(
+                    if (expanded) "收起 ▴" else "展开 ▾",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = InkSecondary,
+                )
+            }
+            AnimatedVisibility(visible = expanded) {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 240.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    notes.forEach { note ->
+                        Text(note, style = MaterialTheme.typography.bodyMedium, color = InkSecondary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun SettingsSheet(
     showTone: Boolean,
     onShowToneChange: (Boolean) -> Unit,
@@ -236,6 +306,8 @@ private fun SettingsSheet(
             MarkStyleChip("〇 ●", MarkStyle.SYMBOL == markStyle) { onMarkStyleChange(MarkStyle.SYMBOL) }
             MarkStyleChip("平 仄", MarkStyle.TEXT == markStyle) { onMarkStyleChange(MarkStyle.TEXT) }
         }
+        ToneMarkLegend(markStyle = markStyle, showRhyme = showRhyme)
+        Spacer(Modifier.height(12.dp))
         Text("正文字号", style = MaterialTheme.typography.bodyLarge, color = Ink)
         Slider(
             value = fontSize,

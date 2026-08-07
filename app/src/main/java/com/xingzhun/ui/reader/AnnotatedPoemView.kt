@@ -88,20 +88,24 @@ fun VerticalPager(
         val space32Dp = 32.dp
         val fontPx = with(density) { fontSize.sp.toPx() }
         val pagePadPx = with(density) { pagePadDp.toPx() }
-        val space8Px = with(density) { 8.dp.toPx() }
         val pageContentWidthPx = with(density) { maxWidth.toPx() } - pagePadPx * 2
         val pageHeightPx = with(density) { maxHeight.toPx() }
 
-        val charStep = fontPx * 1.7f
+        val charStep = fontPx * 2.1f
         val charsPerColumn = ((pageHeightPx - pagePadPx) / charStep).toInt().coerceAtLeast(1)
         val markWidth = fontPx * 0.78f
 
-        val pages = remember(annotated.lines, fontSize, pageContentWidthPx, pageHeightPx) {
+        val pages = remember(annotated.lines, fontSize, pageContentWidthPx, pageHeightPx, showRhyme) {
+            val gapPx = with(density) { 6.dp.toPx() }
             buildVerticalPages(
                 lines = annotated.lines,
                 charsPerColumn = charsPerColumn,
-                // 竖排逐字纵向堆叠：列宽 ≈ 单字宽 + 标记列 + 间距，与字数无关
-                chunkWidth = { _ -> fontPx * 1.25f + markWidth + space8Px },
+                // 竖排逐字纵向堆叠：列宽 ≈ 字符列（韵脚块含下方韵部标签）+ 标记列 + 间距
+                chunkWidth = { chunk ->
+                    val hasRhyme = showRhyme && chunk.chars.any { it.isRhymeWord && it.rhyme != null }
+                    val charColW = if (hasRhyme) fontPx * 2.2f else fontPx * 1.3f
+                    charColW + gapPx + markWidth
+                },
                 space32 = with(density) { space32Dp.toPx() },
                 pageContentWidth = pageContentWidthPx,
             )
@@ -201,7 +205,7 @@ private fun HorizontalLine(
         line.chars.forEach { meta ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (showTone && meta.char !in PUNCT) {
-                    ToneMarkBadge(meta, markStyle, fontSize)
+                    ToneMarkBadge(meta.tone, markStyle, fontSize)
                 } else {
                     Spacer(Modifier.height(badgeSize(fontSize).dp))
                 }
@@ -231,29 +235,57 @@ private fun VerticalLine(
     markStyle: MarkStyle,
     fontSize: Float,
 ) {
-    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        // 字符列（自上而下）
+    // 每字一个等高单元（字 + 下方韵部标签行），与分页估算的 charStep 一致：
+    // 字与平仄标记逐行对齐、均匀分布；韵脚标签置于字下方，槽位预留字形溢出空间
+    val pitch = (fontSize * 2.1f).dp
+    val labelSlot = (fontSize * 0.9f).dp
+    Row(verticalAlignment = Alignment.Top) {
+        // 字符列（自上而下；韵脚标签在字下方）
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             line.chars.forEach { meta ->
-                AnnotatedChar(meta, fontSize, showRhyme)
+                Column(
+                    modifier = Modifier.height(pitch),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AnnotatedChar(meta, fontSize, showRhyme)
+                    }
+                    Box(
+                        modifier = Modifier.height(labelSlot),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (showRhyme && meta.isRhymeWord && meta.rhyme != null) {
+                            Text(
+                                text = "[${meta.rhyme}]",
+                                fontSize = (fontSize * 0.5f).sp,
+                                color = RhymeRed,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
+                }
             }
         }
-        // 平仄标记列（紧贴字符列右侧）；韵部标签同列展示
+        Spacer(Modifier.width(6.dp))
+        // 平仄标记列：仅标记，与字等高对齐，形成一条直线
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             line.chars.forEach { meta ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (showTone && meta.char !in PUNCT) {
-                        ToneMarkBadge(meta, markStyle, fontSize)
-                    } else {
-                        Spacer(Modifier.width(badgeSize(fontSize).dp))
+                Column(
+                    modifier = Modifier.height(pitch),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (showTone && meta.char !in PUNCT) {
+                            ToneMarkBadge(meta.tone, markStyle, fontSize)
+                        }
                     }
-                    if (showRhyme && meta.isRhymeWord && meta.rhyme != null) {
-                        Text(
-                            text = "[${meta.rhyme}]",
-                            fontSize = (fontSize * 0.4f).sp,
-                            color = RhymeRed,
-                        )
-                    }
+                    Box(modifier = Modifier.height(labelSlot))
                 }
             }
         }
@@ -282,8 +314,8 @@ private fun badgeSize(fontSize: Float): Float = fontSize * 0.78f
 
 /** 醒目的平仄标记：彩色圆底 + 标记字符（平=石青〇，仄=朱砂●） */
 @Composable
-private fun ToneMarkBadge(meta: CharMeta, style: MarkStyle, fontSize: Float) {
-    val (fg, bg, text) = when (meta.tone) {
+private fun ToneMarkBadge(tone: ToneClass, style: MarkStyle, fontSize: Float) {
+    val (fg, bg, text) = when (tone) {
         ToneClass.LEVEL -> Triple(
             ToneLevel,
             ToneLevelBg,
@@ -308,6 +340,49 @@ private fun ToneMarkBadge(meta: CharMeta, style: MarkStyle, fontSize: Float) {
             color = fg,
             fontSize = (fontSize * 0.52f).sp,
             fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+/** 平仄记号图例：展示各标记含义，帮助理解〇●（或平仄）等符号 */
+@Composable
+fun ToneMarkLegend(
+    markStyle: MarkStyle,
+    showRhyme: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = "平仄标记说明",
+            style = MaterialThemeTypography(),
+            color = InkSecondary,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            LegendItem(ToneClass.LEVEL, "平声", markStyle)
+            LegendItem(ToneClass.OBLIQUE, "仄声", markStyle)
+            LegendItem(ToneClass.UNKNOWN, "待考", markStyle)
+        }
+        if (showRhyme) {
+            Text(
+                text = "韵脚字以朱砂圈注，并标注《诗韵新编》韵部（如［七齐］）",
+                style = MaterialThemeTypography(),
+                color = InkSecondary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LegendItem(tone: ToneClass, label: String, markStyle: MarkStyle) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        ToneMarkBadge(tone, markStyle, fontSize = 16f)
+        Text(
+            text = label,
+            style = MaterialThemeTypography(),
+            color = InkSecondary,
         )
     }
 }
