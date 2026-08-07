@@ -1,0 +1,23 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+captures/
+
+# Android
+local.properties
+*.apk
+*.aab
+*.keystore
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Kotlin
+.kotlin/
+
+# OS
+.DS_Store

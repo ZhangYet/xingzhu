@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">行箸</string>
+    <string name="library_title">书架</string>
+    <string name="add_title">添加诗词</string>
+</resources>
