@@ -18,11 +18,11 @@ val signingProps = Properties().apply {
 }
 
 android {
-    namespace = "com.xingzhun"
+    namespace = "com.xingzhu"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.xingzhun"
+        applicationId = "com.xingzhu"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
