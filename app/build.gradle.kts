@@ -91,6 +91,7 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.pinyin4j)
 
     testImplementation(libs.junit)
 }

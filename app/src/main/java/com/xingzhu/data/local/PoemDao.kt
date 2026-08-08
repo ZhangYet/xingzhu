@@ -30,6 +30,12 @@ interface PoemDao {
     @Query("UPDATE poem SET annotationJson = :json WHERE id = :id")
     suspend fun updateAnnotation(id: Long, json: String?)
 
+    @Query("UPDATE poem SET titlePinyin = :titlePinyin, authorPinyin = :authorPinyin WHERE id = :id")
+    suspend fun updatePinyin(id: Long, titlePinyin: String, authorPinyin: String)
+
+    @Query("SELECT * FROM poem WHERE titlePinyin = '' OR authorPinyin = ''")
+    suspend fun poemsMissingPinyin(): List<PoemEntity>
+
     @Query("DELETE FROM poem WHERE id = :id")
     suspend fun delete(id: Long)
 }

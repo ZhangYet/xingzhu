@@ -14,4 +14,7 @@ data class PoemEntity(
     /** AnnotatedPoem 的序列化缓存（M1 接入引擎后写入） */
     val annotationJson: String? = null,
     val addedAt: Long = System.currentTimeMillis(),
+    /** 标题/作者首字母（拼音，v0.0.13 用于排序） */
+    val titlePinyin: String = "",
+    val authorPinyin: String = "",
 )

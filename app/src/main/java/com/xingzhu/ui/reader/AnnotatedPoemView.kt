@@ -1,5 +1,6 @@
 package com.xingzhu.ui.reader
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -114,35 +118,66 @@ private fun badgeSize(fontSize: Float): Float = fontSize * 0.78f
 @Composable
 private fun MaterialThemeTypography() = androidx.compose.material3.MaterialTheme.typography.labelMedium
 
-/** 醒目的平仄标记：彩色圆底 + 标记字符（平=石青〇，仄=朱砂●） */
+/** 醒目的平仄标记：彩色圆底 + 标记（平=石青描边圆，仄=朱砂实心圆）。
+ * 符号用 Canvas 绘制保证与圆底同心；文字模式与待考用 Text。 */
 @Composable
 private fun ToneMarkBadge(tone: ToneClass, style: MarkStyle, fontSize: Float) {
-    val (fg, bg, text) = when (tone) {
-        ToneClass.LEVEL -> Triple(
-            ToneLevel,
-            ToneLevelBg,
-            if (style == MarkStyle.SYMBOL) "〇" else "平",
-        )
-        ToneClass.OBLIQUE -> Triple(
-            RhymeRed,
-            RhymeRedBg,
-            if (style == MarkStyle.SYMBOL) "●" else "仄",
-        )
-        ToneClass.UNKNOWN -> Triple(InkSecondary, ToneUnknownBg, "？")
-    }
-    Box(
-        modifier = Modifier
-            .size(badgeSize(fontSize).dp)
-            .clip(CircleShape)
-            .background(bg),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            color = fg,
-            fontSize = (fontSize * 0.52f).sp,
-            fontWeight = FontWeight.Bold,
-        )
+    val badge = badgeSize(fontSize)
+    if (style == MarkStyle.SYMBOL && tone != ToneClass.UNKNOWN) {
+        val fg = if (tone == ToneClass.LEVEL) ToneLevel else RhymeRed
+        val bg = if (tone == ToneClass.LEVEL) ToneLevelBg else RhymeRedBg
+        Box(
+            modifier = Modifier
+                .size(badge.dp)
+                .clip(CircleShape)
+                .background(bg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(badge.dp * 0.2f),
+            ) {
+                val stroke = this.size.minDimension * 0.13f
+                if (tone == ToneClass.LEVEL) {
+                    drawCircle(
+                        color = fg,
+                        radius = this.size.minDimension / 2 - stroke / 2,
+                        style = Stroke(width = stroke),
+                    )
+                } else {
+                    drawCircle(color = fg, style = Fill)
+                }
+            }
+        }
+    } else {
+        val (fg, bg, text) = when (tone) {
+            ToneClass.LEVEL -> Triple(
+                ToneLevel,
+                ToneLevelBg,
+                if (style == MarkStyle.SYMBOL) "〇" else "平",
+            )
+            ToneClass.OBLIQUE -> Triple(
+                RhymeRed,
+                RhymeRedBg,
+                if (style == MarkStyle.SYMBOL) "●" else "仄",
+            )
+            ToneClass.UNKNOWN -> Triple(InkSecondary, ToneUnknownBg, "？")
+        }
+        Box(
+            modifier = Modifier
+                .size(badge.dp)
+                .clip(CircleShape)
+                .background(bg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = text,
+                color = fg,
+                fontSize = (fontSize * 0.52f).sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
     }
 }
 

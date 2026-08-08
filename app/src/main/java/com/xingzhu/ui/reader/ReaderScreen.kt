@@ -98,7 +98,11 @@ fun ReaderScreen(
                     modifier = Modifier.padding(top = 20.dp),
                 )
                 Text(
-                    text = listOfNotNull(poem.dynasty, poem.author, poem.form).joinToString(" · "),
+                    text = listOfNotNull(
+                        poem.dynasty,
+                        poem.author,
+                        poem.form.takeIf { it.isNotBlank() },
+                    ).joinToString(" · "),
                     style = MaterialTheme.typography.bodyMedium,
                     color = InkSecondary,
                 )

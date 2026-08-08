@@ -47,14 +47,4 @@ class AddViewModel @Inject constructor(
     fun add(seed: PoemSeed) {
         viewModelScope.launch { repository.addToLibrary(seed) }
     }
-
-    fun addManual(title: String, author: String, dynasty: String, form: String, content: String): Boolean {
-        val t = title.trim()
-        val c = content.trim()
-        if (t.isEmpty() || c.isEmpty()) return false
-        viewModelScope.launch {
-            repository.addManual(t, author.trim(), dynasty.trim(), form, c)
-        }
-        return true
-    }
 }

@@ -1,5 +1,6 @@
 package com.xingzhu.data.repository
 
+import com.xingzhu.data.local.PinyinUtil
 import com.xingzhu.data.local.PoemDao
 import com.xingzhu.data.local.PoemEntity
 import com.xingzhu.data.model.PoemSeed
@@ -21,28 +22,36 @@ class PoemRepository @Inject constructor(
 
     fun observePoem(id: Long): Flow<PoemEntity?> = poemDao.observeById(id)
 
-    /** 首次启动：把精选种子自动加入书架 */
+    /** 首次启动：把精选种子自动加入书架；并为旧数据回填拼音 */
     suspend fun ensureCorpusSeeded() {
         if (poemDao.count() == 0L) {
             corpusLoader.seeds.forEach { addToLibrary(it) }
+        }
+        backfillPinyin()
+    }
+
+    /** 回填缺失的拼音（Room v1→v2 迁移后旧行拼音为空） */
+    suspend fun backfillPinyin() {
+        poemDao.poemsMissingPinyin().forEach { poem ->
+            poemDao.updatePinyin(
+                poem.id,
+                PinyinUtil.firstLetters(poem.title),
+                PinyinUtil.firstLetters(poem.author),
+            )
         }
     }
 
     fun searchCorpus(query: String): List<PoemSeed> {
         val q = query.trim()
+        if (q.isEmpty()) return emptyList()
         val corpus = corpusLoader.searchCorpus
-        if (q.isEmpty()) return corpus
         return corpus.filter { it.title.contains(q) || it.author.contains(q) }
     }
 
     fun isInLibrary(seed: PoemSeed, library: List<PoemEntity>): Boolean =
         library.any { it.title == seed.title && it.author == seed.author }
 
-    /** 手动输入一首诗 */
-    suspend fun addManual(title: String, author: String, dynasty: String, form: String, content: String): Long =
-        addToLibrary(PoemSeed(title = title, author = author, dynasty = dynasty, form = form, content = content))
-
-    /** 加入书架（同题目+作者已存在则不重复插入），并同步生成平仄/韵脚标注缓存 */
+    /** 加入书架（同题目+作者已存在则不重复插入），并同步生成平仄/韵脚标注缓存与拼音 */
     suspend fun addToLibrary(seed: PoemSeed): Long {
         poemDao.findByTitleAuthor(seed.title, seed.author)?.let { return it.id }
         val id = poemDao.insert(
@@ -52,6 +61,8 @@ class PoemRepository @Inject constructor(
                 dynasty = seed.dynasty,
                 form = seed.form,
                 contentText = seed.content,
+                titlePinyin = PinyinUtil.firstLetters(seed.title),
+                authorPinyin = PinyinUtil.firstLetters(seed.author),
             ),
         )
         val annotated = runCatching {
