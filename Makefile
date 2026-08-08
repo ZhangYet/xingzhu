@@ -10,9 +10,15 @@ GRADLE := JAVA_HOME="$(JAVA_HOME)" ./gradlew
 # adb 路径（可用 make install ADB=你的adb 覆盖）
 ADB ?= $(HOME)/Library/Android/sdk/platform-tools/adb
 
+# 多设备时需指定目标：make install SERIAL=<adb devices 里的序列号>
+install: build
+	@test -n "$(SERIAL)" || (echo "请指定设备: make install SERIAL=<序列号>"; $(ADB) devices; exit 1)
+	$(ADB) -s $(SERIAL) install -r $(DIST_DEBUG)
+
 # 产物
 APK_DEBUG := app/build/outputs/apk/debug/app-debug.apk
 APK_RELEASE := app/build/outputs/apk/release/app-release.apk
+APK_RELEASE_UNSIGNED := app/build/outputs/apk/release/app-release-unsigned.apk
 DIST_DEBUG := xingzhu-debug.apk
 DIST_RELEASE := xingzhu-release.apk
 
@@ -32,7 +38,7 @@ help:
 build:
 	$(GRADLE) :app:assembleDebug :app:assembleRelease
 	cp $(APK_DEBUG) $(DIST_DEBUG)
-	cp $(APK_RELEASE) $(DIST_RELEASE)
+	cp $(APK_RELEASE) $(DIST_RELEASE) 2>/dev/null || cp $(APK_RELEASE_UNSIGNED) $(DIST_RELEASE)
 	@echo "已复制到："
 	@echo "  $(DIST_DEBUG)   $(DIST_RELEASE)"
 
@@ -40,10 +46,7 @@ apk: build
 
 release:
 	$(GRADLE) :app:assembleRelease
-	cp $(APK_RELEASE) $(DIST_RELEASE)
-
-install: build
-	$(ADB) install -r $(DIST_DEBUG)
+	cp $(APK_RELEASE) $(DIST_RELEASE) 2>/dev/null || cp $(APK_RELEASE_UNSIGNED) $(DIST_RELEASE)
 
 clean:
 	$(GRADLE) clean
