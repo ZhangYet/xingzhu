@@ -37,6 +37,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xingzhu.ui.theme.InkSecondary
@@ -105,7 +111,7 @@ private fun SearchTab(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp),
-            placeholder = { Text("按题目或作者搜索（诗经至清诗，共 7 万余首）") },
+            placeholder = { Text("按题目、作者或全文搜索（诗经至清诗，共 7 万余首）") },
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = SealBrown,
@@ -143,6 +149,7 @@ private fun SearchTab(
                 items(results, key = { it.seed.title + "|" + it.seed.author + "|" + it.seed.content.hashCode() }) { item ->
                     SearchResultCard(
                         item = item,
+                        query = query,
                         onAdd = {
                             viewModel.add(item.seed)
                             showMessage("已加入书架《${item.seed.title}》")
@@ -155,7 +162,7 @@ private fun SearchTab(
 }
 
 @Composable
-private fun SearchResultCard(item: PoemSearchItem, onAdd: () -> Unit) {
+private fun SearchResultCard(item: PoemSearchItem, query: String, onAdd: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -175,6 +182,17 @@ private fun SearchResultCard(item: PoemSearchItem, onAdd: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = InkSecondary,
                 )
+                val snippet = matchedSnippet(item.seed.content, query)
+                if (snippet != null) {
+                    Text(
+                        text = highlight(snippet, query.trim()),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkSecondary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
             if (item.inLibrary) {
                 Text("已在书架", style = MaterialTheme.typography.labelMedium, color = RhymeRed)
@@ -189,5 +207,37 @@ private fun SearchResultCard(item: PoemSearchItem, onAdd: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+/** 取正文中首次命中关键词附近的片段 */
+private fun matchedSnippet(content: String, query: String): String? {
+    val q = query.trim()
+    if (q.isEmpty()) return null
+    val idx = content.indexOf(q)
+    if (idx < 0) return null
+    val start = (idx - 10).coerceAtLeast(0)
+    val end = (idx + q.length + 10).coerceAtMost(content.length)
+    return content.substring(start, end)
+}
+
+/** 高亮片段中的关键词 */
+private fun highlight(text: String, keyword: String): AnnotatedString = buildAnnotatedString {
+    if (keyword.isEmpty()) {
+        append(text)
+        return@buildAnnotatedString
+    }
+    var i = 0
+    while (i < text.length) {
+        val idx = text.indexOf(keyword, i)
+        if (idx < 0) {
+            append(text.substring(i))
+            break
+        }
+        append(text.substring(i, idx))
+        withStyle(SpanStyle(color = RhymeRed, fontWeight = FontWeight.Bold)) {
+            append(keyword)
+        }
+        i = idx + keyword.length
     }
 }
