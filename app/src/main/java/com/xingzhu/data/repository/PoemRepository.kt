@@ -41,14 +41,21 @@ class PoemRepository @Inject constructor(
         }
     }
 
-    /** 按题目/作者/全文搜索，取前 50 条 */
+    /** 按题目/作者/全文搜索；标题/作者命中优先，全文命中在后，共取前 50 条 */
     fun searchCorpus(query: String): List<PoemSeed> {
         val q = query.trim()
         if (q.isEmpty()) return emptyList()
-        return corpusLoader.searchCorpus.asSequence()
-            .filter { it.title.contains(q) || it.author.contains(q) || it.content.contains(q) }
-            .take(50)
-            .toList()
+        val head = mutableListOf<PoemSeed>()
+        val tail = mutableListOf<PoemSeed>()
+        for (poem in corpusLoader.searchCorpus) {
+            if (poem.title.contains(q) || poem.author.contains(q)) {
+                head.add(poem)
+                if (head.size >= 50) return head
+            } else if (poem.content.contains(q)) {
+                tail.add(poem)
+            }
+        }
+        return head + tail.take(50 - head.size)
     }
 
     fun isInLibrary(seed: PoemSeed, library: List<PoemEntity>): Boolean =
