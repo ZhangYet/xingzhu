@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -45,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.xingzhu.ui.theme.Ink
 import com.xingzhu.ui.theme.InkSecondary
 import com.xingzhu.ui.theme.Paper
 import com.xingzhu.ui.theme.RhymeRed
@@ -163,51 +165,74 @@ private fun SearchTab(
 
 @Composable
 private fun SearchResultCard(item: PoemSearchItem, query: String, onAdd: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f)) {
-                Text(item.seed.title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = listOfNotNull(item.seed.dynasty, item.seed.author, item.seed.form.takeIf { it.isNotBlank() })
-                        .joinToString(" · "),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = InkSecondary,
-                )
-                val snippet = matchedSnippet(item.seed.content, query)
-                if (snippet != null) {
+            Text(item.seed.title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = listOfNotNull(item.seed.dynasty, item.seed.author, item.seed.form.takeIf { it.isNotBlank() })
+                    .joinToString(" · "),
+                style = MaterialTheme.typography.bodyMedium,
+                color = InkSecondary,
+            )
+            val content = item.seed.content
+            val snippet = matchedSnippet(content, query)
+            val displayText: AnnotatedString = when {
+                expanded -> AnnotatedString(content)
+                snippet != null -> highlight(snippet, query.trim())
+                else -> AnnotatedString(contentPreview(content))
+            }
+            Text(
+                text = displayText,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (snippet != null && !expanded) InkSecondary else Ink,
+                maxLines = if (expanded) Int.MAX_VALUE else 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = { expanded = !expanded }) {
                     Text(
-                        text = highlight(snippet, query.trim()),
-                        style = MaterialTheme.typography.bodySmall,
+                        text = if (expanded) "收起" else "展开全诗",
+                        style = MaterialTheme.typography.labelMedium,
                         color = InkSecondary,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
-            }
-            if (item.inLibrary) {
-                Text("已在书架", style = MaterialTheme.typography.labelMedium, color = RhymeRed)
-            } else {
-                OutlinedButton(
-                    onClick = onAdd,
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        contentColor = SealBrown,
-                    ),
-                ) {
-                    Text("加入书架")
+                if (item.inLibrary) {
+                    Text("已在书架", style = MaterialTheme.typography.labelMedium, color = RhymeRed)
+                } else {
+                    OutlinedButton(
+                        onClick = onAdd,
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                            contentColor = SealBrown,
+                        ),
+                    ) {
+                        Text("加入书架")
+                    }
                 }
             }
         }
     }
+}
+
+/** 取正文首句作为预览（无标点时截取前 40 字） */
+private fun contentPreview(content: String): String {
+    val cut = content.indexOfFirst { it in "。！？；" }
+    val end = if (cut >= 0) cut + 1 else content.length.coerceAtMost(40)
+    return content.take(end)
 }
 
 /** 取正文中首次命中关键词附近的片段 */
