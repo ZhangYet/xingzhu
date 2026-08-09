@@ -34,10 +34,24 @@ def clean(text: str) -> str:
     return re.sub(r"\s+", "", text or "")
 
 
+def clean_editorial(content: str) -> str:
+    """清洗语料中的编辑性内容：校勘记括号、缺字占位、引号/书名号等。"""
+    # 1) 去掉括号校勘记（如"(明明一作：佼佼)"、"（一作：螣）"）
+    content = re.sub(r"（[^（）]*）", "", content)
+    content = re.sub(r"\([^()]*\)", "", content)
+    # 2) 半角标点归整为全角
+    content = content.replace(",", "，").replace(";", "；").replace(":", "：")
+    content = content.replace("?", "？").replace("!", "！")
+    # 3) 去掉缺字占位与编辑性符号
+    for ch in "□—`'\"“”‘’「」『』〔〕《》〈〉［］（）·・…~^_@#$%&*|\\":
+        content = content.replace(ch, "")
+    return content
+
+
 def paras_to_content(paras) -> str:
     if isinstance(paras, str):
-        return clean(simp(paras))
-    return clean(simp("".join(p for p in paras)))
+        return clean_editorial(clean(simp(paras)))
+    return clean_editorial(clean(simp("".join(p for p in paras))))
 
 
 def infer_tang_form(content: str) -> str:

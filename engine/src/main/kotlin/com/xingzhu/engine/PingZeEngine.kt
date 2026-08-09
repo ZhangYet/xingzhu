@@ -66,7 +66,12 @@ class PingZeEngine(
             return CharMeta(char = c, tone = ToneClass.UNKNOWN, isRhymeWord = isRhymeWord)
         }
         if (entry.isRushu) {
-            notes.addIfAbsent("「$c」为入声字（今读平声，按仄计）")
+            // 入声字今读平声 → 说明按仄计；今读仄声 → 直接说明按诗韵新编判仄
+            if (entry.modernTone in 1..2) {
+                notes.addIfAbsent("「$c」为入声字（今读平声，按仄计）")
+            } else {
+                notes.addIfAbsent("「$c」为入声字（诗韵新编判仄声）")
+            }
         }
         return CharMeta(
             char = c,

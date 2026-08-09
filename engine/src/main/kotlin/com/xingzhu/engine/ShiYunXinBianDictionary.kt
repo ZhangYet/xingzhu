@@ -15,6 +15,8 @@ data class DictionaryEntry(
     val rhyme: String?,
     val isRushu: Boolean,
     val ambiguous: Boolean,
+    /** 现代普通话声调 1-4；0 = 轻声/无调 */
+    val modernTone: Int,
 )
 
 class ShiYunXinBianDictionary private constructor(
@@ -36,8 +38,18 @@ class ShiYunXinBianDictionary private constructor(
             rhyme = entry.rhyme,
             isRushu = isRushu,
             ambiguous = entry.ambiguous,
+            modernTone = entry.tone,
         )
     }
+
+    /** 现代普通话声调 1-4/0；未收录返回 null（诊断用，非业务接口） */
+    internal fun rawTone(char: Char): Int? = entries[char]?.tone
+
+    /** 诊断用：全部已收录字的韵部（按当前映射） */
+    internal fun allRhymesForScan(): Map<Char, String?> = entries.mapValues { it.value.rhyme }
+
+    /** 诊断用：入声字集合 */
+    internal fun rushuSetForScan(): Set<Char> = rushuSet
 
     private data class CharEntry(
         val tone: Int,          // 1-4；0 = 轻声/无调
@@ -90,6 +102,7 @@ class ShiYunXinBianDictionary private constructor(
             '胜' to "shèng",
             '处' to "chù",
             '地' to "dì",   // 诗作中"地上/天地"读 dì（去声），kXHC 首选是助词轻声 de
+            '育' to "yù",   // 诗作中"养育/孕育"读 yù；kXHC 首选是"生育"的 yō（无对应韵母）
         )
 
         private val INITIALS = listOf("zh", "ch", "sh") +
@@ -201,6 +214,7 @@ class ShiYunXinBianDictionary private constructor(
             return when (final) {
                 "a", "ia", "ua" -> "一麻"
                 "o", "uo" -> "二波"
+                "yo" -> "二波" // 语气词"哟 yō"，近似归二波，避免韵部缺失
                 "e" -> "三歌"
                 "ie", "üe" -> "四皆"
                 "i" -> "七齐"
