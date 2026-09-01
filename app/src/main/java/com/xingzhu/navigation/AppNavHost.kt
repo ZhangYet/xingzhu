@@ -7,12 +7,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.xingzhu.ui.add.AddScreen
+import com.xingzhu.ui.check.PoemCheckScreen
 import com.xingzhu.ui.library.LibraryScreen
 import com.xingzhu.ui.reader.ReaderScreen
 
 object Routes {
     const val LIBRARY = "library"
     const val ADD = "add"
+    const val CHECK = "check"
     const val READER = "reader/{poemId}"
     fun reader(poemId: Long) = "reader/$poemId"
 }
@@ -28,11 +30,15 @@ fun AppNavHost() {
         composable(Routes.LIBRARY) {
             LibraryScreen(
                 onAddClick = { navController.navigate(Routes.ADD) },
+                onCheckClick = { navController.navigate(Routes.CHECK) },
                 onPoemClick = { id -> navController.navigate(Routes.reader(id)) },
             )
         }
         composable(Routes.ADD) {
             AddScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.CHECK) {
+            PoemCheckScreen(onBack = { navController.popBackStack() })
         }
         composable(
             route = Routes.READER,

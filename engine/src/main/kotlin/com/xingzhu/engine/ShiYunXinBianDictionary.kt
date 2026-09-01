@@ -103,6 +103,8 @@ class ShiYunXinBianDictionary private constructor(
             '处' to "chù",
             '地' to "dì",   // 诗作中"地上/天地"读 dì（去声），kXHC 首选是助词轻声 de
             '育' to "yù",   // 诗作中"养育/孕育"读 yù；kXHC 首选是"生育"的 yō（无对应韵母）
+            '不' to "bù",   // 规范读 bù（去声）；kXHC 首选 bú 是去声前变调，诗作中读仄
+            '过' to "guò",  // 诗作"轻舟已过"等读 guò（去声）；kXHC 首选可能是 guō（平）
         )
 
         private val INITIALS = listOf("zh", "ch", "sh") +

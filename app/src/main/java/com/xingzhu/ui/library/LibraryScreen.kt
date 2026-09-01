@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -25,6 +26,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xingzhu.data.local.PoemEntity
+import com.xingzhu.ui.theme.CardTea
 import com.xingzhu.ui.theme.InkSecondary
 import com.xingzhu.ui.theme.Paper
 import com.xingzhu.ui.theme.RhymeRed
@@ -56,6 +59,7 @@ private sealed interface LibraryItem {
 @Composable
 fun LibraryScreen(
     onAddClick: () -> Unit,
+    onCheckClick: () -> Unit,
     onPoemClick: (Long) -> Unit,
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
@@ -113,12 +117,24 @@ fun LibraryScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick,
-                containerColor = SealBrown,
-                contentColor = Paper,
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "添加诗词")
+                SmallFloatingActionButton(
+                    onClick = onCheckClick,
+                    containerColor = CardTea,
+                    contentColor = SealBrown,
+                ) {
+                    Icon(Icons.Filled.Edit, contentDescription = "习作格律检测")
+                }
+                FloatingActionButton(
+                    onClick = onAddClick,
+                    containerColor = SealBrown,
+                    contentColor = Paper,
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = "添加诗词")
+                }
             }
         },
     ) { padding ->
