@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -49,13 +50,35 @@ fun AnnotatedPoemBody(
     markStyle: MarkStyle,
     fontSize: Float,
     modifier: Modifier = Modifier,
+    /** 需要醒目标出的句索引（0-based），整行铺淡朱砂底并前置 ⚠ */
+    issueLines: Set<Int> = emptySet(),
 ) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        annotated.lines.forEach { line ->
-            HorizontalLine(line, showTone, showRhyme, markStyle, fontSize)
+        annotated.lines.forEachIndexed { index, line ->
+            if (index in issueLines) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(RhymeRedBg)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "⚠",
+                            color = RhymeRed,
+                            fontSize = (fontSize * 0.9f).sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(end = 8.dp),
+                        )
+                        HorizontalLine(line, showTone, showRhyme, markStyle, fontSize)
+                    }
+                }
+            } else {
+                HorizontalLine(line, showTone, showRhyme, markStyle, fontSize)
+            }
         }
     }
 }
