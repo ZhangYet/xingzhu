@@ -8,6 +8,29 @@ object TextSplitter {
 
     private val SENTENCE_BOUNDARY = Regex("[。！？，；：、]")
 
+    /**
+     * 清洗用户粘贴/输入的诗词文本：去除所有空白与不可见/控制字符。
+     * 网页复制常带入行尾空格、换行、全角空格、零宽字符等，混入正文会被当作"字"标注。
+     */
+    fun cleanInput(text: String): String {
+        if (text.isEmpty()) return text
+        val sb = StringBuilder(text.length)
+        for (ch in text) {
+            val c = ch.code
+            when {
+                ch.isWhitespace() -> continue
+                c == 0xFEFF -> continue                     // BOM / 零宽不换行
+                c in 0x200B..0x200F -> continue             // 零宽空格/连接符/方向控制
+                c in 0x2028..0x202E -> continue             // 行/段分隔、双向文本
+                c in 0x2060..0x206F -> continue             // 连字符/字距/语言标签等
+                c in 0xFE00..0xFE0F -> continue             // 变体选择符
+                c < 0x20 || c in 0x7F..0x9F -> continue     // 控制字符
+                else -> sb.append(ch)
+            }
+        }
+        return sb.toString()
+    }
+
     fun splitSentences(text: String): List<String> {
         if (text.isBlank()) return emptyList()
         val result = mutableListOf<String>()

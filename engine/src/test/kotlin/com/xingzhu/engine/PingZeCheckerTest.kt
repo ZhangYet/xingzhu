@@ -173,3 +173,25 @@ class PingZeCheckerTest {
         val UNK = ToneClass.UNKNOWN
     }
 }
+
+class TextCleanerTest {
+
+    @Test
+    fun `strip whitespace invisible and control chars`() {
+        val raw = "遥望长城意气豪，风云激越浪滔滔。\n 雁鸿东返栖湖泊，骐骥西来适枥槽。\t 家国兴荣一任重，算筹玄妙亦功高。\u3000廉颇老矣丹心在，愿请长缨助战鏖。"
+        val cleaned = TextSplitter.cleanInput(raw)
+        assertEquals("遥望长城意气豪，风云激越浪滔滔。雁鸿东返栖湖泊，骐骥西来适枥槽。家国兴荣一任重，算筹玄妙亦功高。廉颇老矣丹心在，愿请长缨助战鏖。", cleaned)
+    }
+
+    @Test
+    fun `strip zero-width chars and bom`() {
+        val raw = "\uFEFF雁\u200B鸿\u200D东返栖湖泊"
+        assertEquals("雁鸿东返栖湖泊", TextSplitter.cleanInput(raw))
+    }
+
+    @Test
+    fun `blank input stays blank`() {
+        assertEquals("", TextSplitter.cleanInput(""))
+        assertEquals("", TextSplitter.cleanInput(" \n\t\u3000"))
+    }
+}

@@ -34,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.xingzhu.engine.TextSplitter
 import com.xingzhu.ui.reader.AnnotatedPoemBody
 import com.xingzhu.ui.reader.MarkStyle
 import com.xingzhu.ui.theme.Ink
@@ -79,7 +80,7 @@ fun PoemCheckScreen(
         ) {
             OutlinedTextField(
                 value = input,
-                onValueChange = { input = it },
+                onValueChange = { input = TextSplitter.cleanInput(it) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),

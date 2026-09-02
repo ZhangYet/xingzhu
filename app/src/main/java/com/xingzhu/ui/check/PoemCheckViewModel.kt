@@ -5,6 +5,7 @@ import com.xingzhu.engine.AnnotatedPoem
 import com.xingzhu.engine.PingZeChecker
 import com.xingzhu.engine.PingZeEngine
 import com.xingzhu.engine.PingZeIssue
+import com.xingzhu.engine.TextSplitter
 import com.xingzhu.engine.ToneClass
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -31,7 +32,7 @@ class PoemCheckViewModel @Inject constructor(
     val uiState: StateFlow<PoemCheckUiState> = _uiState.asStateFlow()
 
     fun analyze(content: String) {
-        val text = content.trim()
+        val text = TextSplitter.cleanInput(content)
         if (text.isEmpty()) {
             _uiState.value = PoemCheckUiState()
             return
