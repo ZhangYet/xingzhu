@@ -21,12 +21,12 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,7 +44,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xingzhu.data.local.PoemEntity
-import com.xingzhu.ui.theme.CardTea
 import com.xingzhu.ui.theme.InkSecondary
 import com.xingzhu.ui.theme.Paper
 import com.xingzhu.ui.theme.RhymeRed
@@ -121,13 +120,6 @@ fun LibraryScreen(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SmallFloatingActionButton(
-                    onClick = onCheckClick,
-                    containerColor = CardTea,
-                    contentColor = SealBrown,
-                ) {
-                    Icon(Icons.Filled.Edit, contentDescription = "习作格律检测")
-                }
                 FloatingActionButton(
                     onClick = onAddClick,
                     containerColor = SealBrown,
@@ -135,6 +127,13 @@ fun LibraryScreen(
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = "添加诗词")
                 }
+                ExtendedFloatingActionButton(
+                    onClick = onCheckClick,
+                    containerColor = RhymeRed,
+                    contentColor = Paper,
+                    icon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                    text = { Text("习作检测") },
+                )
             }
         },
     ) { padding ->
