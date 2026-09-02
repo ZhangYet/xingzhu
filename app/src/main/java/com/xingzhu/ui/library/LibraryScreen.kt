@@ -22,7 +22,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -120,13 +119,13 @@ fun LibraryScreen(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                FloatingActionButton(
+                ExtendedFloatingActionButton(
                     onClick = onAddClick,
                     containerColor = SealBrown,
                     contentColor = Paper,
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = "添加诗词")
-                }
+                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                    text = { Text("添加诗词") },
+                )
                 ExtendedFloatingActionButton(
                     onClick = onCheckClick,
                     containerColor = RhymeRed,
