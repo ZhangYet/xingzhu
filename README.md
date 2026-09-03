@@ -17,9 +17,9 @@
 
 ## 截图
 
-| 书架 | 阅读页（平仄/韵脚标注） |
-| --- | --- |
-| ![书架](docs/screenshots/library.png) | ![阅读页](docs/screenshots/reader.png) |
+| 书架 | 习作格律检测 | 阅读页（平仄/韵脚标注） |
+| --- | --- | --- |
+| ![书架](docs/screenshots/library.png) | ![习作检测](docs/screenshots/check.png) | ![阅读页](docs/screenshots/reader.png) |
 
 ## 下载
 
